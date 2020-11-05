@@ -1,0 +1,118 @@
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="robots" content="ALL">
+<meta name="robots" content="index,follow">
+<meta name="revisit-after" content="1 days">
+<meta name="Subject" content="pays">
+<meta name="description" content="pays">
+<meta name="keywords" content="세탁기,코인빨래방,빨래,빨래방">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<meta name="HandheldFriendly" content="true">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<title>pays</title>
+<link href="css/pay_font.css" rel="stylesheet" type="text/css">
+<link href="css/default.css" rel="stylesheet" type="text/css">
+<link rel="stylesheet" href="css/jquery.bxslider.css">
+<script src="js/jquery-1.10.2.min.js"></script>
+<script src="js/jsQR.js"></script>
+<style>
+	#canvas {width:100%; height:100%; box-sizing:border-box; padding-bottom:60px; object-fit:cover;}
+	/*
+	#canvas {width:100%; height:100%; box-sizing:border-box; padding-bottom:60px;
+	-webkit-transform: translateX(-50%) translateY(-50%); 
+    -moz-transform: translateX(-50%) translateY(-50%); 
+    -ms-transform: translateX(-50%) translateY(-50%); 
+    -o-transform: translateX(-50%) translateY(-50%); 
+    transform: translateX(-50%) translateY(-50%); 
+    position: absolute; 
+    top: 50%; 
+    left: 50%; 
+    min-width: 100%; 
+    min-height: 100%; 
+    width: auto; 
+    height: auto; 
+		z-index: -100; object-fit:cover;}*/
+
+</style>
+</head>
+<body>
+       <div id="loadingMessage"></div>
+		<canvas id="canvas" hidden></canvas>
+		<div id="output" hidden>
+		<div id="outputMessage"></div>
+		<div hidden><span id="outputData"></span></div>
+		</div>
+		<script>
+		var video = document.createElement("video");
+		var canvasElement = document.getElementById("canvas");
+		var canvas = canvasElement.getContext("2d");
+		var loadingMessage = document.getElementById("loadingMessage");
+		var outputContainer = document.getElementById("output");
+		var outputMessage = document.getElementById("outputMessage");
+		var outputData = document.getElementById("outputData");
+
+		function drawLine(begin, end, color) {
+		  canvas.beginPath();
+		  canvas.moveTo(begin.x, begin.y);
+		  canvas.lineTo(end.x, end.y);
+		  canvas.lineWidth = 4;
+		  canvas.strokeStyle = color;
+		  canvas.stroke();
+		}
+
+		// Use facingMode: environment to attemt to get the front camera on phones
+		navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).then(function(stream) {
+		  video.srcObject = stream;
+		  video.setAttribute("playsinline", true); // required to tell iOS safari we don't want fullscreen
+		  video.play();
+		  requestAnimationFrame(tick);
+		});
+
+		function tick() {
+		  loadingMessage.innerText = ""
+		  if (video.readyState === video.HAVE_ENOUGH_DATA) {
+			loadingMessage.hidden = true;
+			canvasElement.hidden = false;
+			outputContainer.hidden = false;
+
+			canvasElement.height = video.videoHeight;
+			canvasElement.width = video.videoWidth;
+			canvas.drawImage(video, 0, 0, canvasElement.width, canvasElement.height);
+			var imageData = canvas.getImageData(0, 0, canvasElement.width, canvasElement.height);
+			var code = jsQR(imageData.data, imageData.width, imageData.height, {
+			  inversionAttempts: "dontInvert",
+			});
+			if (code) {
+			  drawLine(code.location.topLeftCorner, code.location.topRightCorner, "#4D8CF8");
+			  drawLine(code.location.topRightCorner, code.location.bottomRightCorner, "#4D8CF8");
+			  drawLine(code.location.bottomRightCorner, code.location.bottomLeftCorner, "##4D8CF8");
+			  drawLine(code.location.bottomLeftCorner, code.location.topLeftCorner, "##4D8CF8");
+			  outputMessage.hidden = true;
+			  outputData.parentElement.hidden = false;
+			  outputData.innerText = code.data;
+			} else {
+			  outputMessage.hidden = false;
+			  outputData.parentElement.hidden = true;
+			}
+		  }
+		  requestAnimationFrame(tick);
+		}
+		</script>
+        <ul class="bottom_tab">
+            <li class="tab_li">
+                <input type="radio" name="tab" id="home" value="tab" class="tab_input" />
+                <label for="home" class="label"><p class="home_txt">홈</p></label>
+            </li>
+            <li class="tab_li">
+                <input type="radio" name="tab" id="qr" value="tab" class="tab_input" checked />
+                <label for="qr" class="label"><p class="qr_txt">QR결제</p></label>
+            </li>
+            <li class="tab_li">
+                <input type="radio" name="tab" id="details" value="tab" class="tab_input" />
+                <label for="details" class="label"><p class="details_txt">사용내역</p></label>
+            </li>
+        </ul>  
+</body>
